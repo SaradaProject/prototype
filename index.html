@@ -1,0 +1,688 @@
+<title>Mapa do Condomínio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: lista do percurso à esquerda, telemóvel ao centro com notas dos pontos em aberto por baixo. */
+:root{
+  --bg:#eef2f1; --surface:#fbfdfc; --surface2:#e3ebe9; --fg:#14211f; --muted:#5b6d69; --line:#cbd8d5;
+  --accent:#0f766e; --accent-fg:#ffffff; --accent-soft:#d5ece8; --ctl:#6b7e79;
+  --warn:#8a4b08; --warn-soft:#fbe8c0; --danger:#b42318;
+  --font-display:'Bricolage Grotesque','Segoe UI',system-ui,sans-serif;
+  --font-body:'Figtree','Segoe UI',system-ui,sans-serif;
+  --font-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c1514; --surface:#14211f; --surface2:#1c2d2a; --fg:#e4efed; --muted:#93a8a3; --line:#2b403c;
+  --accent:#3cc4b4; --accent-fg:#04201d; --accent-soft:#123a35; --ctl:#7f9a94; --warn:#f0b44c; --warn-soft:#3a2e12; --danger:#f27c70; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c1514; --surface:#14211f; --surface2:#1c2d2a; --fg:#e4efed; --muted:#93a8a3; --line:#2b403c;
+  --accent:#3cc4b4; --accent-fg:#04201d; --accent-soft:#123a35; --ctl:#7f9a94; --warn:#f0b44c; --warn-soft:#3a2e12; --danger:#f27c70; color-scheme:dark}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:14px;margin:0;padding-inline:16px;padding-block:20px}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);gap:28px;max-width:980px;margin:0 auto;align-items:start}
+.side{position:sticky;top:env(safe-area-inset-top,0px);display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 40px);overflow:auto;padding-right:4px}
+.side h1{font:700 22px/1.1 var(--font-display);margin:0}
+.side p{margin:0;color:var(--muted);font-size:13px;line-height:1.4}
+.lab{font:500 12px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.rolebox{display:flex;flex-direction:column;gap:6px}
+.seg{display:flex;gap:4px;background:var(--surface2);padding:3px;border-radius:10px}
+.seg button{flex:1;border:0;background:transparent;padding:10px 8px;min-height:44px;border-radius:8px;font-weight:500;font-size:13px;min-width:0}
+.seg button.on{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.18);color:var(--fg)}
+.rf{display:flex;flex-direction:column;gap:2px}
+.rf .lab{margin:8px 0 2px}
+.step{display:flex;gap:8px;align-items:baseline;text-align:left;border:0;background:transparent;padding:10px 8px;min-height:44px;border-radius:8px;font-size:13px}
+.step:hover{background:var(--surface2)}
+.step.on{background:var(--accent-soft);color:var(--fg);font-weight:600}
+.step i{font:500 12px var(--font-mono);color:var(--muted);font-style:normal;min-width:18px}
+.jump{display:none}
+.jump select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:16px;min-width:0}
+.phone{width:390px;max-width:100%;height:790px;background:var(--surface);border:1px solid var(--line);border-radius:38px;box-shadow:0 0 0 8px var(--surface2),0 18px 40px rgba(0,0,0,.18);overflow:hidden;position:relative}
+.scr{display:flex;flex-direction:column;height:100%}
+.hd{display:flex;align-items:center;gap:8px;padding:18px 16px 10px;min-height:62px}
+.hd h2{font:700 19px/1.15 var(--font-display);margin:0;flex:1;min-width:0;text-wrap:balance}
+.ib{border:1px solid var(--ctl);background:var(--surface);border-radius:10px;width:44px;height:44px;display:grid;place-items:center;font-size:16px;flex:none}
+.ib:disabled{opacity:.35;cursor:default}
+.bd{flex:1;overflow:auto;padding:4px 16px 16px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.bd>*{flex-shrink:0}
+.hd h2:focus,.bd h3:focus{outline:none}
+.ft{padding:10px 16px 16px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line)}
+.btn{border:1px solid var(--ctl);background:var(--surface);border-radius:12px;padding:13px 16px;min-height:46px;font-weight:600;text-align:center}
+.btn.p{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.g{border-color:transparent;background:transparent;color:var(--accent)}
+.btn.d{color:var(--danger)}
+.btn:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;align-items:center}
+.row>*{min-width:0}
+.sp{flex:1}
+h3{font:700 26px/1.1 var(--font-display);margin:6px 0 0;text-wrap:balance}
+.sub{color:var(--muted);line-height:1.45;margin:0}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld label{font-weight:600;font-size:13px}
+.in{border:1px solid var(--ctl);background:var(--surface);border-radius:12px;padding:13px 12px;min-height:46px;width:100%}
+.card{border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--surface)}
+.stp{display:flex;align-items:center;gap:10px}
+.stp button{width:44px;height:44px;border-radius:10px;border:1px solid var(--ctl);background:var(--surface);font-size:18px}
+.stp b{font:700 22px var(--font-display);min-width:28px;text-align:center;font-variant-numeric:tabular-nums}
+.tg{width:56px;height:44px;border:0;background:transparent;position:relative;flex:none;padding:0}
+.tg::before{content:"";position:absolute;left:5px;top:8px;width:46px;height:28px;border-radius:99px;background:var(--ctl)}
+.tg::after{content:"";position:absolute;top:11px;left:8px;width:22px;height:22px;border-radius:50%;background:#fff;transition:transform .15s}
+.tg[aria-checked="true"]::before{background:var(--accent)}
+.tg[aria-checked="true"]::after{transform:translateX(20px)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--ctl);background:var(--surface);border-radius:99px;padding:10px 16px;min-height:44px;font-size:13px;font-weight:500}
+.chip.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.note{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.4}
+.ok{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.4}
+.prog{height:4px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent)}
+.tabs{display:flex;border-top:1px solid var(--line);padding:6px 8px 12px}
+.tabs button{flex:1;border:0;background:transparent;padding:8px 4px;min-height:48px;font-size:12px;font-weight:600;color:var(--muted);display:flex;flex-direction:column;gap:3px;align-items:center}
+.tabs button.on{color:var(--accent)}
+.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+svg.plan{width:100%;height:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;touch-action:none;display:block}
+.plan .t-outline{fill:none;stroke:var(--fg);stroke-width:2.5;pointer-events:stroke}
+.plan .t-shared{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.2}
+.plan .t-core{fill:var(--surface2);stroke:var(--muted);stroke-width:1.2}
+.plan .t-park{fill:var(--surface2);stroke:var(--line);stroke-width:1.2}
+.plan .t-free{fill:var(--surface);stroke:var(--fg);stroke-width:1.2;stroke-dasharray:4 3}
+.plan text{fill:var(--fg);font:500 11.5px var(--font-body);pointer-events:none}
+.plan text.pt{fill:var(--muted);pointer-events:auto}
+.plan text.ol{fill:var(--muted);font:500 11px var(--font-mono)}
+.plan g.sel rect{stroke:var(--accent);stroke-width:2.5;stroke-dasharray:none}
+.plan .gridl{stroke:var(--line);stroke-width:.4;opacity:.7}
+.plan .gridl.s{stroke:var(--muted);opacity:.4}
+.plan g.ovl rect{stroke:var(--danger);stroke-width:2.2;stroke-dasharray:3 2}
+.plan text.dim{fill:var(--muted);font:500 11px var(--font-mono)}
+.plan .hnd circle.v{fill:var(--accent);stroke:#fff;stroke-width:1.5;cursor:pointer}
+.plan .hnd circle.h{fill:transparent;cursor:pointer}
+.plan .pin circle{stroke:#fff;stroke-width:1.5}
+.plan .pin text{fill:#fff;font:700 11px var(--font-body);text-anchor:middle;dominant-baseline:central}
+.plan .pin.tmp circle{stroke-dasharray:3 2}
+.tabs4{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;margin:8px 0}.tabs4 button{border:1px solid var(--ctl);background:var(--surface);border-radius:10px;min-height:44px;font-size:13px;font-weight:600}.tabs4 button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+#canvas{position:sticky;top:0;z-index:3;background:var(--surface)}#canvas svg{max-height:260px}
+.tools{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.tools button{border:1px solid var(--ctl);background:var(--surface);border-radius:10px;padding:8px 2px;min-height:52px;font-size:12px;font-weight:600;display:flex;flex-direction:column;gap:2px;align-items:center}
+.tools button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.rec{display:flex;gap:10px;text-align:left;border:1px solid var(--ctl);background:var(--surface);border-radius:12px;padding:10px 12px;width:100%;align-items:flex-start}
+.dot{width:12px;height:12px;border-radius:50%;margin-top:3px;flex:none}
+.rec b{display:block;font-weight:600}
+.rec small{color:var(--muted);font-size:12px}
+.pill{font:500 12px var(--font-mono);letter-spacing:.04em;text-transform:uppercase;border-radius:99px;padding:3px 8px;background:var(--surface2);color:var(--muted);flex:none}
+.pill.o{background:var(--warn-soft);color:var(--warn)}
+.fab{position:absolute;right:16px;bottom:84px;background:var(--accent);color:var(--accent-fg);border:0;border-radius:99px;padding:15px 20px;min-height:48px;font-weight:600;box-shadow:0 6px 16px rgba(0,0,0,.25)}
+.mod{position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;z-index:5}
+.mod>div{background:var(--surface);width:100%;padding:20px 16px 24px;border-radius:22px 22px 0 0;display:flex;flex-direction:column;gap:12px}
+.toast{position:absolute;left:16px;right:16px;top:12px;background:var(--fg);color:var(--bg);padding:10px 12px;border-radius:12px;font-weight:500;z-index:6;text-align:center}
+.types{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.types button{border:1px solid var(--ctl);background:var(--surface);border-radius:12px;padding:12px;min-height:48px;display:flex;gap:8px;align-items:center;font-weight:600;text-align:left}
+.types button.on{border-color:var(--accent);background:var(--accent-soft)}
+.mode{border:1px solid var(--ctl);background:var(--surface);border-radius:14px;padding:14px;text-align:left;display:flex;flex-direction:column;gap:3px}
+.mode b{font-weight:600}.mode span{color:var(--muted);font-size:13px}
+.ph{display:flex;gap:8px;flex-wrap:wrap}
+.ph .th{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--surface2)}
+.ph .th img{width:100%;height:100%;object-fit:cover;display:block}
+.ph .th button{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:14px;line-height:1}
+.add{width:84px;height:84px;border:2px dashed var(--accent);border-radius:10px;color:var(--accent);display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;font-size:12px;font-weight:600;position:relative;cursor:pointer;text-align:center}
+.add input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.add:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.big{width:100%;border-radius:10px;border:1px solid var(--line);display:block}
+.pd{border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.pd summary{cursor:pointer;font-weight:600;min-height:28px}
+.pd ul{margin:8px 0 0;padding-left:18px;color:var(--muted);line-height:1.5;font-size:13px}
+.nudge{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.cap{max-width:390px;width:100%;display:flex;flex-direction:column;gap:8px}
+.cap ul{margin:0;padding-left:18px;color:var(--muted);line-height:1.45;font-size:13px}
+.cap .rfname{font:500 12px var(--font-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.code{font:500 22px var(--font-mono);letter-spacing:.08em;text-align:center;padding:14px;border:1px dashed var(--accent);border-radius:12px;background:var(--accent-soft)}
+.logo{width:72px;height:72px;border-radius:20px;background:var(--accent);display:grid;place-items:center}
+.logo svg{width:44px;height:44px;stroke:var(--accent-fg);fill:none;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+@media (max-width:820px){
+  .app{grid-template-columns:minmax(0,1fr);gap:16px}
+  .side{position:static;max-height:none}
+  .rf-list{display:none}
+  .jump{display:block}
+  .phone{height:760px;border-radius:26px;box-shadow:0 0 0 4px var(--surface2)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div id="live" class="sr" role="status" aria-live="polite"></div>
+<div class="app">
+  <aside class="side">
+    <div><h1>Mapa do Condomínio</h1><p style="margin-top:6px">Protótipo navegável de RF_01 a RF_04. Nome provisório. Os dados são exemplos do vosso caso: dois prédios de dois pisos, garagem partilhada, cobertura e jardins.</p></div>
+    <div class="rolebox"><span class="lab" aria-hidden="true">A ver como</span>
+      <div class="seg" id="roleseg" role="group" aria-label="Ver como"><button data-act="role" data-r="admin" aria-pressed="false">Administrador</button><button data-act="role" data-r="morador" aria-pressed="false">Morador</button></div></div>
+    <div class="jump"><label class="lab" for="jumpsel">Ir para o ecrã</label><select id="jumpsel"></select></div>
+    <nav class="rf-list" id="journey" aria-label="Ecrãs do protótipo"></nav>
+  </aside>
+  <main class="stage">
+    <div class="phone" id="phone"></div>
+    <div class="cap" id="cap"></div>
+  </main>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clone=o=>JSON.parse(JSON.stringify(o));
+let uid=100;const nid=()=>'e'+(uid++);
+
+/* ---------- dados ---------- */
+const TYPES=[{id:'avaria',n:'Avaria',c:'#b45309'},{id:'seguranca',n:'Segurança',c:'#c0342a'},{id:'ruido',n:'Ruído',c:'#6a4bc0'},{id:'limpeza',n:'Limpeza',c:'#0f766e'},{id:'aviso',n:'Aviso',c:'#2563a8'},{id:'outro',n:'Outro',c:'#56655f'},
+ {id:'infiltracao',n:'Infiltração e humidade',c:'#a3441f',g:'obra'},{id:'fissura',n:'Fissuras e rachas',c:'#a3441f',g:'obra'},
+ {id:'canalizacao',n:'Canalização e esgotos',c:'#a3441f',g:'obra'},{id:'eletrico',n:'Instalação elétrica',c:'#a3441f',g:'obra'},
+ {id:'caixilharia',n:'Janelas e portas',c:'#a3441f',g:'obra'},{id:'impermeab',n:'Impermeabilização',c:'#a3441f',g:'obra'},
+ {id:'acabamentos',n:'Acabamentos e pintura',c:'#a3441f',g:'obra'},{id:'inacabado',n:'Obra por concluir',c:'#a3441f',g:'obra'}];
+const tp=id=>TYPES.find(t=>t.id===id)||TYPES[5];
+const demoPhoto='data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="480" height="320"><rect width="480" height="320" fill="#8b9894"/><rect x="0" y="0" width="480" height="150" fill="#7a8783"/><path d="M200 0 q-20 60 10 110 q20 40 -5 90" stroke="#2f4a55" stroke-width="14" fill="none" opacity=".55"/><text x="240" y="285" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#e9efed">Foto de exemplo</text></svg>');
+const S={
+  role:'admin',screen:'welcome',flow:'create',modal:null,toast:null,
+  me:{name:'Daniel',email:'daniel@exemplo.pt'},
+  condo:{name:'Condomínio Rua das Flores',addr:'Rua das Flores, 24–26, Porto',code:'FLORES-7K2'},
+  join:{code:'FLORES-7K2',name:'Sarinha',frac:'Prédio B, 1.º esq.',email:'sarinha@exemplo.pt'},
+  q:{buildings:[{id:'b1',name:'Prédio A',floors:2,start:0},{id:'b2',name:'Prédio B',floors:2,start:0}],
+     shared:[
+      {id:'garagem',kind:'garagem',name:'Garagem',on:true,floors:2,under:true,where:['b1','b2']},
+      {id:'cobertura',kind:'cobertura',name:'Cobertura',on:true,where:['b1','b2']},
+      {id:'sala',kind:'outra',name:'Sala de convívio',on:true,at:'R',where:['b1','b2']},
+      {id:'piscina',kind:'outra',name:'Piscina',on:true,at:'R',where:['b1','b2']},
+      {id:'playground',kind:'outra',name:'Playground',on:true,at:'R',where:['b1','b2']},
+      {id:'jardim',kind:'outra',name:'Jardins',on:true,at:'X',where:['b1','b2']}]},
+  custom:'',
+  places:[],base:{},saved:{},draft:{},hist:[],hi:0,tool:'select',sel:null,
+  view:{b:'b1',l:'F0'},
+  filter:'all',rec:{},res:{},recId:null,
+  records:[
+   {id:1,type:'avaria',title:'Elevador parado',desc:'Parou entre o R/C e o 1.º andar. Já avisei a empresa.',pin:{b:'b2',l:'F0',x:160,y:148},by:'Sarinha',when:'hoje, 08:40',st:'aberto'},
+   {id:2,type:'avaria',title:'Luz da garagem fundida',desc:'Zona das duas últimas vagas, sem luz.',pin:{b:'sh',l:'G-1',x:230,y:210},by:'Daniel',when:'ontem, 21:15',st:'aberto'},
+   {id:3,type:'seguranca',title:'Porta da cobertura aberta',desc:'Estava sem trinco. Fechei e coloquei fita.',pin:{b:'sh',l:'R',x:235,y:220},by:'Daniel',when:'segunda, 18:02',st:'resolvido',res:{text:'Trinco substituído pela empresa de manutenção.',photos:[demoPhoto],by:'Daniel'}},
+   {id:4,type:'aviso',title:'Reunião de condomínio dia 15',desc:'Às 19h30 no hall do Prédio A.',pin:null,by:'Daniel',when:'segunda, 10:00',st:'aberto'},
+   {id:5,type:'limpeza',title:'Escadas por lavar esta semana',desc:'',pin:null,by:'Sarinha',when:'domingo, 17:20',st:'aberto'},
+   {id:6,type:'infiltracao',title:'Água a escorrer do teto da garagem',desc:'Aparece depois de chover, junto à rampa. Fotografar e enviar à promotora.',pin:{b:'sh',l:'G-1',x:160,y:150},photos:[demoPhoto],by:'Daniel',when:'terça, 09:10',st:'aberto'},
+   {id:7,type:'fissura',title:'Fissura na parede da escada',desc:'Do R/C ao 1.º andar, cerca de 1 m.',pin:{b:'b2',l:'F1',x:150,y:118},by:'Sarinha',when:'terça, 19:30',st:'aberto'}]
+};
+
+/* ---------- planta ---------- */
+const lvLabel=l=>l[0]==='G'?'Garagem '+l.slice(1):l==='R'?'Cobertura':l==='X'?'Exterior':l==='F0'?'R/C':(+l.slice(1))+'.º andar';
+const E=(tone,label,x,y,w,h)=>({id:nid(),k:'rect',tone,label,x,y,w,h});
+const T=(label,x,y)=>({id:nid(),k:'text',tone:'text',label,x,y});
+const M=10,BW=32,BH=30; /* 1 quadrado = 1 m; quadro de 32 x 30 m */
+const SL=[[4,4,11,5],[17,4,11,5],[4,21,11,5],[17,21,11,5],[4,12,8,5],[20,12,8,5]];
+const whoText=(s)=>s.where.length===S.q.buildings.length?'todos os prédios':s.where.map(id=>(S.q.buildings.find(b=>b.id===id)||{name:'?'}).name).join(', ');
+const suffix=(s)=>s.where.length&&s.where.length<S.q.buildings.length?' ('+s.where.map(id=>(S.q.buildings.find(b=>b.id===id)||{name:''}).name.split(' ').pop()).join(', ')+')':'';
+function generate(){
+  const q=S.q,places=[],base={};
+  q.buildings.forEach(b=>{
+    const levels=[];for(let i=0;i<b.floors;i++)levels.push('F'+((b.start||0)+i));
+    places.push({id:b.id,name:b.name,levels});
+    levels.forEach(l=>{
+      const els=[E('outline',b.name+' · '+lvLabel(l),2,2,28,26),E('core','Escadas',13,12,6,5),E('core','Elevador',13,9,6,3)];
+      if(l===levels[0])els.push(E('shared','Hall de entrada',4,4,9,5));else els.push(T('Frações por definir',11,23));
+      base[b.id+':'+l]=els;});
+  });
+  const on=q.shared.filter(s=>s.on),g=on.find(s=>s.kind==='garagem'),c=on.find(s=>s.kind==='cobertura'),oth=on.filter(s=>s.kind==='outra'),lev=[];
+  if(g)for(let i=1;i<=g.floors;i++){const l='G'+(g.under===false?i:-i);lev.push(l);
+    const els=[E('outline','Áreas partilhadas · '+lvLabel(l)+suffix(g),2,2,28,26)];
+    for(let k=0;k<8;k++)els.push(E('park','V'+(k+1),4+(k%4)*6,k<4?4:19,5,7));els.push(E('core','Rampa',10,12,12,4));base['sh:'+l]=els;}
+  const inR=oth.filter(s=>s.at==='R'),inX=oth.filter(s=>s.at!=='R');
+  const lay=(l,title,arr,sx)=>{const els=[E('outline','Áreas partilhadas · '+title,2,2,28,26)];arr.forEach((s,i)=>{if(i<SL.length){const a=SL[i];els.push(E('shared',s.name+suffix(s),a[0],a[1],a[2],a[3]));}});base['sh:'+l]=els;};
+  if(inX.length){lev.push('X');lay('X','Exterior',inX);}
+  if(c||inR.length){lev.push('R');lay('R','Cobertura'+(c?suffix(c):''),inR);}
+  if(lev.length)places.push({id:'sh',name:'Áreas partilhadas',levels:lev});
+  S.places=places;S.base=base;S.saved=clone(base);resetDraft();fixView(true);
+}
+function resetDraft(){S.draft=clone(S.saved);S.hist=[JSON.stringify(S.draft)];S.hi=0;S.sel=null;S.tool='select';}
+function fixView(force){
+  const p=S.places.find(x=>x.id===S.view.b)||S.places[0];
+  S.view.b=p.id;
+  if(force||!p.levels.includes(S.view.l))S.view.l=p.levels.includes('F0')?'F0':p.levels[0];
+}
+const curPlace=()=>S.places.find(x=>x.id===S.view.b)||S.places[0];
+const keyOf=(b,l)=>b+':'+l;
+const placeName=(b,l)=>{const p=S.places.find(x=>x.id===b);return p?(p.name+' · '+lvLabel(l)):'—';};
+function commit(){S.hist=S.hist.slice(0,S.hi+1);S.hist.push(JSON.stringify(S.draft));S.hi=S.hist.length-1;}
+const dirty=()=>JSON.stringify(S.draft)!==JSON.stringify(S.saved);
+
+const rects=els=>els.filter(e=>e.k==='rect'&&e.tone!=='outline');
+const overl=(els,e)=>e.k!=='rect'||e.tone==='outline'?[]:rects(els).filter(o=>o.id!==e.id&&e.x<o.x+o.w&&o.x<e.x+e.w&&e.y<o.y+o.h&&o.y<e.y+e.h);
+function planSVG(src,o={}){
+  const els=src[keyOf(S.view.b,S.view.l)]||[];
+  let grid='';for(let i=M;i<BW*M;i+=M)grid+=`<line class="gridl${i%(5*M)?'':' s'}" x1="${i}" y1="0" x2="${i}" y2="${BH*M}"/>`;
+  for(let i=M;i<BH*M;i+=M)grid+=`<line class="gridl${i%(5*M)?'':' s'}" x1="0" y1="${i}" x2="${BW*M}" y2="${i}"/>`;
+  const g=els.map(e=>{
+    if(e.k==='text')return `<text class="pt" data-el="${e.id}" x="${e.x*M}" y="${e.y*M}">${esc(e.label)}</text>`;
+    const sel=e.id===o.sel,ov=overl(els,e).length>0,c=(sel?' sel':'')+(ov?' ovl':'');
+    if(e.tone==='outline')return `<g data-el="${e.id}" class="${c}"><rect class="t-outline" x="${e.x*M}" y="${e.y*M}" width="${e.w*M}" height="${e.h*M}"/><text class="ol" x="${e.x*M+8}" y="${e.y*M+14}">${esc(e.label)}</text></g>`;
+    return `<g data-el="${e.id}" class="${c}"><rect class="t-${e.tone}" x="${e.x*M}" y="${e.y*M}" width="${e.w*M}" height="${e.h*M}" rx="2"/><text x="${(e.x+e.w/2)*M}" y="${(e.y+e.h/2)*M-(sel?6:0)}" text-anchor="middle" dominant-baseline="central">${esc(e.label)}</text>${sel&&o.edit?`<text class="dim" x="${(e.x+e.w/2)*M}" y="${(e.y+e.h/2)*M+8}" text-anchor="middle" dominant-baseline="central">${e.w} × ${e.h} m</text>`:''}</g>`;}).join('');
+  let hd='';
+  const se=o.edit&&o.sel&&els.find(e=>e.id===o.sel&&e.k==='rect');
+  if(se){const x0=se.x*M,y0=se.y*M,x1=(se.x+se.w)*M,y1=(se.y+se.h)*M,xm=(x0+x1)/2,ym=(y0+y1)/2;
+    hd='<g class="hnd">'+[['nw',x0,y0],['n',xm,y0],['ne',x1,y0],['e',x1,ym],['se',x1,y1],['s',xm,y1],['sw',x0,y1],['w',x0,ym]].map(h=>`<circle class="h" data-h="${h[0]}" cx="${h[1]}" cy="${h[2]}" r="14"/><circle class="v" data-h="${h[0]}" cx="${h[1]}" cy="${h[2]}" r="5.5"/>`).join('')+'</g>';}
+  let pins='';
+  (o.pins||[]).forEach((r,i)=>{pins+=pinSVG(r.pin,i+1,tp(r.type).c,'',r.id);});
+  if(o.tmp)pins+=pinSVG(o.tmp,'+','#0f766e','tmp');
+  const lab=`Planta: ${placeName(S.view.b,S.view.l)}`;
+  return `<svg class="plan" id="svg" viewBox="0 0 ${BW*M} ${BH*M}" ${o.edit?`role="group" aria-label="Área de desenho. ${esc(lab)}. Cada quadrado é 1 metro."`:`role="img" aria-label="${esc(lab)}. Descrição em texto por baixo."`}>${grid}${g}<text class="ol" x="${2*M}" y="${BH*M-6}">1 quadrado = 1 m × 1 m</text>${hd}${pins}</svg>`;
+}
+function pinSVG(p,n,c,cls,id){return `<g class="pin ${cls}" ${id?`data-pin="${id}"`:''} transform="translate(${p.x},${p.y})" style="cursor:pointer"><polygon points="-5,-8 5,-8 0,2" fill="${c}"/><circle cx="0" cy="-16" r="10" fill="${c}"/><text x="0" y="-16">${n}</text></g>`;}
+function placeNav(){
+  const p=curPlace();
+  return `<div class="seg">${S.places.map(x=>`<button class="${x.id===p.id?'on':''}" aria-pressed="${x.id===p.id}" data-act="vb" data-b="${x.id}">${esc(x.name)}</button>`).join('')}</div>
+  ${p.levels.length>1?`<div class="chips">${p.levels.map(l=>`<button class="chip ${l===S.view.l?'on':''}" aria-pressed="${l===S.view.l}" data-act="vl" data-l="${l}">${lvLabel(l)}</button>`).join('')}</div>`:''}`;
+}
+const pos=(x,y)=>(y<100?'em cima':y>200?'em baixo':'ao meio')+(x<107?' à esquerda':x>213?' à direita':' ao centro');
+function planText(src,withPins){
+  const els=(src[keyOf(S.view.b,S.view.l)]||[]).filter(e=>e.tone!=='outline');
+  const here=withPins?pinsHere():[];
+  return `<details class="pd"><summary>Descrição da planta em texto</summary><ul>${els.map(e=>`<li>${esc(e.label)}${e.k==='rect'?`, ${e.w} × ${e.h} m`:''}, ${pos((e.x+(e.w||0)/2)*M,(e.y+(e.h||0)/2)*M)}${overl(src[keyOf(S.view.b,S.view.l)]||[],e).length?', sobrepõe-se a '+overl(src[keyOf(S.view.b,S.view.l)]||[],e).map(o=>esc(o.label)).join(', '):''}.</li>`).join('')||'<li>Sem zonas neste piso.</li>'}${here.map((r,i)=>`<li>Registo ${i+1}: ${esc(r.title)} (${tp(r.type).n}), ${pos(r.pin.x,r.pin.y)}.</li>`).join('')}</ul></details>`;
+}
+const pinsHere=()=>S.records.filter(r=>r.pin&&r.pin.b===S.view.b&&r.pin.l===S.view.l);
+
+/* ---------- componentes ---------- */
+const hdr=(t,back,right='')=>`<div class="hd">${back?`<button class="ib" data-act="go" data-to="${back}" aria-label="Voltar"><span aria-hidden="true">←</span></button>`:''}<h2 tabindex="-1">${t}</h2>${right}</div>`;
+const btn=(l,a,k='',x='')=>`<button class="btn ${k}" data-act="${a}" ${x}>${l}</button>`;
+const go_=(l,to,k='')=>btn(l,'go',k,`data-to="${to}"`);
+const fld=(id,label,path,val,ph='',type='text')=>`<div class="fld"><label for="${id}">${label}</label><input class="in" id="${id}" type="${type}" data-bind="${path}" value="${esc(val)}" placeholder="${esc(ph)}" ${/email/.test(path)?'autocomplete="email"':/\.name$/.test(path)?'autocomplete="name"':''}></div>`;
+const tg=(a,x,on,label)=>`<button class="tg" role="switch" aria-checked="${on}" aria-label="${esc(label)}" data-act="${a}" ${x}></button>`;
+const note=t=>`<div class="note">${t}</div>`;
+const prog=(n,t)=>`<div class="prog" aria-label="Passo ${n} de ${t}"><i style="width:${n/t*100}%"></i></div>`;
+const ico={
+  plan:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h8M11 3v9M15 21v-6h6"/></svg>',
+  list:'<svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+  cfg:'<svg viewBox="0 0 24 24"><path d="M4 21V8l8-5 8 5v13M9 21v-7h6v7"/></svg>'};
+const tabbar=a=>`<nav class="tabs" aria-label="Navegação principal">${[['map','Planta','plan'],['list','Registos','list'],['cfg','Condomínio','cfg']].map(t=>`<button class="${a===t[0]?'on':''}" ${a===t[0]?'aria-current="page"':''} data-act="go" data-to="${t[0]}">${ico[t[2]].replace('<svg','<svg aria-hidden="true" focusable="false"')}${t[1]}</button>`).join('')}</nav>`;
+const scr=(h,b,f='')=>`<div class="scr">${h}<div class="bd">${b}</div>${f}</div>`;
+const isAdmin=()=>S.role==='admin';
+
+/* ---------- ecrãs ---------- */
+const SC={};
+const def=(id,rf,title,role,notes,fn)=>SC[id]={id,rf,title,role,notes,fn};
+
+def('welcome','RF_01','Boas-vindas',null,['Nome da app ainda por decidir.','Como entra quem não tem código? (convite, pedido ao administrador)'],()=>scr('',`
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;padding-top:40px">
+   <div class="logo"><svg viewBox="0 0 24 24"><path d="M5 21V6l7-3 7 3v15M9 9h2M13 9h2M9 13h2M13 13h2M10 21v-4h4v4"/></svg></div>
+   <h3 style="font-size:34px">Regista o que acontece no teu prédio.</h3>
+   <p class="sub">Avarias, avisos e ocorrências, no sítio exato da planta. Como o Waze faz na estrada.</p></div>`,
+  `<div class="ft" style="border:0">${btn('Criar um condomínio','flow','p','data-v="create"')}${btn('Entrar com um código','flow','','data-v="join"')}</div>`));
+
+def('auth','RF_01','Criar conta (administrador)',null,['Email e palavra-passe protegidos: palavra-passe nunca em claro, email visível só ao próprio. Ver análise de segurança.','Dúvida: confirmar o email antes de continuar? Segundo fator para o administrador?'],()=>scr(hdr('Criar conta','welcome'),`
+  <p class="sub">Vais ser o administrador deste condomínio.</p>
+  ${fld('f-name','O teu nome','me.name',S.me.name)}
+  ${fld('f-email','Email','me.email',S.me.email,'nome@exemplo.pt','email')}
+  <div class="fld"><label for="f-pw">Palavra-passe</label><input class="in" id="f-pw" type="password" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></div>
+  <div class="ok">O teu email e a tua palavra-passe só tu os vês. Nem o administrador nem outros moradores têm acesso.</div>`,
+  `<div class="ft">${btn('Continuar','authok','p')}</div>`));
+
+def('create','RF_01','Criar condomínio','admin',['Dúvida: pode haver mais do que um administrador?','O condomínio pode ter um ou mais prédios (definido no RF_02).'],()=>scr(hdr('Criar condomínio','auth'),`
+  <p class="sub">Dá um nome ao condomínio. Os prédios e as áreas partilhadas definem-se a seguir.</p>
+  ${fld('f-cn','Nome do condomínio','condo.name',S.condo.name)}
+  ${fld('f-ca','Morada','condo.addr',S.condo.addr)}
+  <div class="ok">Ficas como administrador. Podes passar este papel mais tarde.</div>`,
+  `<div class="ft">${go_('Criar condomínio','created','p')}</div>`));
+
+def('created','RF_01','Condomínio criado','admin',['Dúvida: o código expira? Pode ser regenerado?'],()=>scr('',`
+  <div style="padding-top:36px;display:flex;flex-direction:column;gap:16px">
+   <h3>${esc(S.condo.name)} está criado.</h3>
+   <p class="sub">Partilha este código com os moradores. Eles registam-se com ele.</p>
+   <div class="code">${esc(S.condo.code)}</div>
+   ${btn('Copiar código','copy','')}
+   <p class="sub">Antes de os convidares, configura os prédios e as áreas partilhadas.</p></div>`,
+  `<div class="ft" style="border:0">${go_('Configurar o condomínio','q0','p')}${go_('Fazer isto mais tarde','cfg','g')}</div>`));
+
+def('join','RF_01','Registar com código','morador',['Registo integrado com o código do condomínio.','Dúvida: o código é um por condomínio ou um por morador? O administrador aprova cada morador?','Dúvida: confirmar o email? Regras da palavra-passe?'],()=>scr(hdr('Entrar no condomínio','welcome'),`
+  ${fld('f-jc','Código do condomínio','join.code',S.join.code,'ex.: FLORES-7K2')}
+  ${fld('f-jn','O teu nome','join.name',S.join.name)}
+  ${fld('f-jf','A tua fração','join.frac',S.join.frac,'ex.: Prédio B, 1.º esq.')}
+  ${fld('f-je','Email','join.email',S.join.email,'nome@exemplo.pt','email')}
+  <div class="fld"><label for="f-jp">Palavra-passe</label><input class="in" id="f-jp" type="password" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></div>
+  <div class="ok">O teu email e a tua palavra-passe ficam protegidos. Mais ninguém os vê, nem o administrador.</div>`,
+  `<div class="ft">${btn('Criar conta e entrar','joinok','p')}${btn('Já tenho conta','flow','g','data-v="login"')}</div>`));
+
+def('login','RF_01','Entrar na conta',null,['Dúvida: como se recupera a palavra-passe? Biometria?','Quem pertence a mais de um condomínio escolhe qual abrir.'],()=>scr(hdr('Entrar','welcome'),`
+  ${fld('f-le','Email','join.email',S.join.email,'nome@exemplo.pt','email')}
+  <div class="fld"><label for="f-lp">Palavra-passe</label><input class="in" id="f-lp" type="password" autocomplete="current-password"></div>
+  <button class="btn g" style="text-align:left;padding-left:0" data-act="forgot">Esqueci-me da palavra-passe</button>`,
+  `<div class="ft">${btn('Entrar','loginok','p')}</div>`));
+
+def('joined','RF_01','Bem-vindo, morador','morador',[],()=>scr('',`
+  <div style="padding-top:48px;display:flex;flex-direction:column;gap:14px">
+   <div class="logo"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></div>
+   <h3>Já estás no ${esc(S.condo.name)}.</h3>
+   <p class="sub">Podes consultar a planta e registar tudo o que vires no prédio.</p></div>`,
+  `<div class="ft" style="border:0">${go_('Ver a planta','map','p')}</div>`));
+
+const QT=4;
+def('q0','RF_02','Início do questionário','admin',['Dúvida: perguntar também as frações (T1, T2…) já aqui?','O questionário só cria a base. Depois edita-se o desenho (RF_03).'],()=>scr(hdr('Configurar condomínio','cfg'),`
+  <h3>Quatro perguntas e a planta base fica pronta.</h3>
+  <div class="card">${['Quantos prédios tem o condomínio','Quantos pisos tem cada prédio','Que áreas são partilhadas entre os prédios','Resumo e planta base'].map((t,i)=>`<div class="row"><b style="font:500 12px var(--font-mono);color:var(--accent);width:20px">${i+1}</b><span>${t}</span></div>`).join('')}</div>
+  <p class="sub">Depois podes ajustar o desenho à realidade, ao metro quadrado.</p>`,
+  `<div class="ft">${go_('Começar','q1','p')}</div>`));
+
+def('q1','RF_02','Quantos prédios','admin',['Limite de 4 prédios neste protótipo. Qual o limite real?','Dúvida: copiar um prédio igual a outro, para poupar tempo?'],()=>scr(hdr('Prédios','q0'),`
+  ${prog(1,QT)}<h3>Quantos prédios tem o condomínio?</h3>
+  <div class="card"><div class="row"><div class="stp"><button data-act="nb" data-d="-1" aria-label="Menos prédios">−</button><b aria-live="polite">${S.q.buildings.length}</b><button data-act="nb" data-d="1" aria-label="Mais prédios">+</button></div><span class="sub">${S.q.buildings.length===1?'prédio':'prédios'}</span></div></div>
+  <p class="sub">${S.q.buildings.map(b=>esc(b.name)).join(', ')}</p>`,
+  `<div class="ft">${go_('Seguinte','q2','p')}</div>`));
+
+def('q2','RF_02','Pisos por prédio','admin',['Aqui contam só os pisos de cada prédio. A garagem e a cobertura são áreas partilhadas, na pergunta seguinte.'],()=>scr(hdr('Pisos','q1'),`
+  ${prog(2,QT)}<h3>Quantos pisos tem cada prédio?</h3>
+  ${S.q.buildings.map(b=>`<div class="card">${fld('f-bn'+b.id,'Nome','b:'+b.id+':name',b.name)}
+   <div class="row"><span class="sub sp">Número de pisos</span><div class="stp"><button data-act="fl" data-id="${b.id}" data-d="-1" aria-label="Menos pisos no ${esc(b.name)}">−</button><b aria-live="polite">${b.floors}</b><button data-act="fl" data-id="${b.id}" data-d="1" aria-label="Mais pisos no ${esc(b.name)}">+</button></div></div>
+   <span class="lab">O primeiro piso é</span><div class="chips"><button class="chip ${!b.start?'on':''}" aria-pressed="${!b.start}" data-act="bst" data-id="${b.id}" data-v="0">R/C</button><button class="chip ${b.start===1?'on':''}" aria-pressed="${b.start===1}" data-act="bst" data-id="${b.id}" data-v="1">1.º andar</button></div></div>`).join('')}`,
+  `<div class="ft">${go_('Seguinte','q3','p')}</div>`));
+
+def('q3','RF_02','Áreas partilhadas','admin',['Áreas que servem vários prédios: garagem, cobertura, sala de convívio, jardins, piscina.','A garagem pode ter mais de um piso, subterrânea (-1, -2…) ou não, e cada piso aparece na planta.','Dúvida: lista fixa ou livre? Aqui há lista e campo livre.','Dúvida: a cobertura é sempre partilhada, ou pode ser de um só prédio? Aqui escolhes quem a usa.'],()=>scr(hdr('Áreas partilhadas','q2'),`
+  ${prog(3,QT)}<h3>Que áreas são partilhadas entre os prédios?</h3>
+  <p class="sub">Escolhe as que existem e quem as usa.</p>
+  ${S.q.shared.map(s=>`<div class="card"><div class="row"><span class="sp"><b>${esc(s.name)}</b></span>${tg('tgs',`data-id="${s.id}"`,s.on,s.name+' existe e é partilhada')}</div>
+   ${s.on&&s.kind==='garagem'?`<div class="row"><span class="sp">Pisos de garagem</span><div class="stp"><button data-act="gf" data-id="${s.id}" data-d="-1" aria-label="Menos pisos de garagem">−</button><b aria-live="polite">${s.floors}</b><button data-act="gf" data-id="${s.id}" data-d="1" aria-label="Mais pisos de garagem">+</button></div></div>
+   <div class="row"><span class="sp">Subterrânea (pisos -1, -2…)</span>${tg('gu',`data-id="${s.id}"`,s.under!==false,'Garagem subterrânea')}</div>`:''}
+   ${s.on&&s.kind==='outra'?`<span class="lab">Onde fica</span><div class="chips"><button class="chip ${s.at==='R'?'on':''}" aria-pressed="${s.at==='R'}" data-act="at" data-id="${s.id}" data-v="R">Cobertura</button><button class="chip ${s.at!=='R'?'on':''}" aria-pressed="${s.at!=='R'}" data-act="at" data-id="${s.id}" data-v="X">Exterior</button></div>`:''}
+   ${s.on?`<span class="lab">Partilhada por</span><div class="chips">${S.q.buildings.map(b=>`<button class="chip ${s.where.includes(b.id)?'on':''}" aria-pressed="${s.where.includes(b.id)}" data-act="sw" data-id="${s.id}" data-w="${b.id}">${esc(b.name)}</button>`).join('')}</div>`:''}</div>`).join('')}
+  <div class="row"><input class="in sp" id="f-custom" aria-label="Outra área partilhada" data-bind="custom" value="${esc(S.custom)}" placeholder="Outra área, ex.: Ginásio"><button class="btn" data-act="addsh">Juntar</button></div>`,
+  `<div class="ft">${go_('Seguinte','q4','p')}</div>`));
+
+def('q4','RF_02','Resumo','admin',['Gerar de novo apaga as edições livres. Dúvida: perguntar antes, ou manter o que o admin desenhou?'],()=>{
+  const on=S.q.shared.filter(s=>s.on);
+  return scr(hdr('Resumo','q3'),`${prog(4,QT)}<h3>Está tudo certo?</h3>
+  <div class="card">${S.q.buildings.map(b=>`<div><b>${esc(b.name)}</b><br><span class="sub">${b.floors} ${b.floors===1?'piso':'pisos'} · começa no ${b.start===1?'1.º andar':'R/C'}</span></div>`).join('')}</div>
+  <div class="card"><b>Áreas partilhadas (${on.length})</b>${on.map(s=>`<span class="sub">${esc(s.name)}${s.kind==='garagem'?' · '+s.floors+(s.floors===1?' piso':' pisos')+(s.under===false?' acima do solo':' subterrâneos'):''} · ${esc(whoText(s))}</span>`).join('')||'<span class="sub">Nenhuma</span>'}</div>
+  ${note('Ao gerar, a planta atual é substituída pela planta base.')}`,
+  `<div class="ft">${btn('Gerar planta base','gen','p')}</div>`);});
+
+const planBody=(src,withPins,extra='')=>`${placeNav()}${planSVG(src,{pins:withPins?pinsHere():[]})}${planText(src,withPins)}${extra}`;
+def('base','RF_02','Planta base','admin',['Primeira versão gerada só com as respostas. Ainda não é fiel à realidade.','Dúvida: planta em esquema ou tentar aproximar-se da forma real do prédio?'],()=>scr(hdr('Planta base','q4'),
+  `<div class="ok">Planta gerada. Percorre os pisos e ajusta o que for preciso.</div>${planBody(S.saved,false)}`,
+  `<div class="ft">${go_('Editar o desenho','edit','p')}${go_('Concluir','map','')}</div>`));
+
+def('edit','RF_03','Editar desenho','admin',['Toca numa zona para a escolher: só aparecem os comandos de que precisas (Nome, Mover, Tamanho, Apagar).','As formas encaixam nos quadrados de 1 m e esticam na horizontal e na vertical, para recriar a planta ao metro quadrado.','Dúvida: o quadro deve ter outra escala, ou o administrador define a medida real do prédio?','Dúvida: que ferramentas além de forma, linha e texto? (portas, janelas, medidas)','Dúvida: editar no telemóvel ou só em ecrã maior?','Dúvida: o que acontece aos registos de um elemento apagado? Hoje ficam no mesmo ponto.'],()=>{
+  const el=(S.draft[keyOf(S.view.b,S.view.l)]||[]).find(e=>e.id===S.sel);
+   const cat=(el&&el.k==='text'&&S.cat==='size')?'name':(S.cat||'name');
+   const stp=(k,lab,v)=>`<div class="row"><span class="sp">${lab}</span><div class="stp"><button data-act="sz" data-a="${k}" data-d="-1" aria-label="Menos ${lab.toLowerCase()}">−</button><b style="font-size:16px;min-width:56px" aria-live="polite">${v} m</b><button data-act="sz" data-a="${k}" data-d="1" aria-label="Mais ${lab.toLowerCase()}">+</button></div></div>`;
+   const tabs=el?[['name',el.k==='text'?'Texto':'Nome'],['move','Mover'],...(el.k==='rect'?[['size','Tamanho']]:[]),['del','Apagar']]:[];
+   let panel='';
+   if(el){const ov=overl(S.draft[keyOf(S.view.b,S.view.l)]||[],el);
+     let body='';
+     if(cat==='name')body=`<div class="fld"><label for="f-el">${el.k==='text'?'Texto':'Nome da zona'}</label><input class="in" id="f-el" data-el-label value="${esc(el.label)}" autocomplete="off" enterkeyhint="done"></div>`;
+     else if(cat==='move')body=`<div class="nudge">${btn('←','nudge','','data-dx="-1" data-dy="0" aria-label="Mover 1 metro para a esquerda"')}${btn('→','nudge','','data-dx="1" data-dy="0" aria-label="Mover 1 metro para a direita"')}${btn('↑','nudge','','data-dx="0" data-dy="-1" aria-label="Mover 1 metro para cima"')}${btn('↓','nudge','','data-dx="0" data-dy="1" aria-label="Mover 1 metro para baixo"')}</div><p class="sub">Cada seta move 1 metro. Também podes arrastar na planta.</p>`;
+     else if(cat==='size')body=stp('w','Largura',el.w)+stp('h','Altura',el.h)+`<p class="sub" aria-live="polite">${el.w} × ${el.h} m · ${el.w*el.h} m²</p>`;
+     else body=`<p class="sub">Os registos que estavam neste ponto mantêm-se.</p>${btn('Apagar este elemento','delsel','d')}`;
+     panel=`<div class="card"><div class="row"><b class="sp">${esc(el.label)||'Elemento'}</b><button class="btn" data-act="opencopy" style="min-height:44px">Copiar…</button><button class="btn" data-act="desel" aria-label="Fechar edição do elemento" style="min-height:44px">Concluído</button></div>
+     <div class="tabs4" role="group" aria-label="O que queres mudar">${tabs.map(t=>`<button class="${cat===t[0]?'on':''}" aria-pressed="${cat===t[0]}" data-act="cat" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>
+     ${body}
+     ${ov.length?note('Esta zona sobrepõe-se a '+ov.map(o=>esc(o.label)).join(', ')+'. Move-a ou reduz-a para cada metro quadrado ficar numa só zona.'):''}</div>`;}
+   else panel=`<div class="card"><b>Nada escolhido</b><p class="sub">Toca numa zona da planta para a editar, ou junta uma nova.</p><div class="row">${btn('Juntar zona','addshape','sp')}${btn('Juntar texto','addtext','sp')}</div>${btn('Copiar este piso…','opencopy','')}</div>`;
+   const elsHere=(S.draft[keyOf(S.view.b,S.view.l)]||[]).filter(e=>e.tone!=='outline');
+  return scr(hdr('Editar desenho','base',`<button class="ib" data-act="undo" ${S.hi>0?'':'disabled'} aria-label="Desfazer">↶</button><button class="ib" data-act="redo" ${S.hi<S.hist.length-1?'':'disabled'} aria-label="Refazer">↷</button>`),
+  `${placeNav()}<div id="canvas">${planSVG(S.draft,{sel:S.sel,edit:true})}</div>${panel}
+    <details class="card"><summary><b>Elementos deste piso (${elsHere.length})</b></summary><div class="chips" style="margin-top:8px">${elsHere.map(e=>`<button class="chip ${e.id===S.sel?'on':''}" aria-pressed="${e.id===S.sel}" data-act="selel" data-id="${e.id}">${esc(e.label)}</button>`).join('')||'<span class="sub">Sem elementos.</span>'}</div>${btn('Repor planta base','resetbase','')}</details>
+    ${planText(S.draft,false)}`,
+`<div class="ft">${btn(dirty()?'Guardar alterações':'Sem alterações','savedlg','p',dirty()?'':'disabled')}</div>`);});
+
+
+const MX=32,MY=30; /* eixo de espelho: moldura de 2 a 30 m (x) e de 2 a 28 m (y) */
+const copySrc=()=>{const els=curEls(S.draft);return S.cp.what==='el'?els.filter(e=>e.id===S.sel):els.filter(e=>e.tone!=='outline');};
+function mirrorEls(arr,m){return arr.map(e=>{const c=clone(e);c.id=nid();
+  const w=e.k==='rect'?e.w:Math.round((e.label||'').length*.55),h=e.k==='rect'?e.h:0;
+  if(m==='h')c.x=Math.max(0,Math.min(BW-(e.k==='rect'?e.w:0),MX-e.x-w));
+  if(m==='v')c.y=Math.max(e.k==='rect'?0:1,Math.min(BH-(e.k==='rect'?e.h:0),MY-e.y-h));
+  return c;});}
+def('copy','RF_03','Copiar para outro piso','admin',['Copia um elemento ou o piso todo para outros pisos, do mesmo prédio ou de outro.','O espelho troca esquerda por direita (ou cima por baixo) dentro da moldura do piso. Os textos mudam de sítio mas não ficam ao contrário.','Dúvida: copiar também os registos? Hoje só se copia o desenho.','Dúvida: espelhar em torno do centro da moldura chega, ou é preciso escolher o eixo?'],()=>{
+  if(!S.cp)S.cp={what:S.sel?'el':'floor',dest:[],mirror:'none',mode:'replace'};
+  const cp=S.cp,here=keyOf(S.view.b,S.view.l),src=copySrc(),dests=cp.dest;
+  const chipb=(on,act,x,t,dis)=>`<button class="chip ${on?'on':''}" aria-pressed="${on}" data-act="${act}" ${x} ${dis?'disabled':''}>${t}</button>`;
+  const same=dests.includes(here);
+  const pv={};pv[here]=[...curEls(S.draft).filter(e=>e.tone==='outline'),...mirrorEls(src,cp.mirror)];
+  return scr(hdr('Copiar para outro piso','edit'),`
+   <div class="card"><span class="lab">O que copiar</span><div class="chips">${chipb(cp.what==='el','cpw','data-v="el"','Este elemento',!S.sel)}${chipb(cp.what==='floor','cpw','data-v="floor"','Todo o piso')}</div>
+    <p class="sub">${src.length} ${src.length===1?'elemento':'elementos'} de ${esc(placeName(S.view.b,S.view.l))}.</p></div>
+   <div class="card"><span class="lab">Para onde</span>${S.places.map(pl=>`<div style="margin:6px 0"><b class="sub">${esc(pl.name)}</b><div class="chips">${pl.levels.map(l=>{const k=keyOf(pl.id,l);return chipb(dests.includes(k),'cpd',`data-k="${k}"`,lvLabel(l)+(k===here?' (este piso)':''));}).join('')}</div></div>`).join('')}</div>
+   <div class="card"><span class="lab">Espelhar</span><div class="chips">${chipb(cp.mirror==='none','cpm','data-v="none"','Sem espelho')}${chipb(cp.mirror==='h','cpm','data-v="h"','Esquerda ↔ direita')}${chipb(cp.mirror==='v','cpm','data-v="v"','Cima ↔ baixo')}</div></div>
+   ${cp.what==='floor'?`<div class="card"><span class="lab">Se o piso de destino já tiver desenho</span><div class="chips">${chipb(cp.mode==='replace'&&!same||cp.mode==='replace','cpx','data-v="replace"','Substituir')}${chipb(cp.mode==='add','cpx','data-v="add"','Juntar ao que existe')}</div>${same&&cp.mode==='replace'?'<p class="sub">No próprio piso, a cópia junta-se ao que já existe.</p>':''}</div>`:''}
+   <div class="card"><span class="lab">Pré-visualização</span><div>${planSVG(pv,{})}</div>${planText(pv,false)}<p class="sub">${cp.mirror==='none'?'Sem espelho.':cp.mirror==='h'?'Espelhado: esquerda ↔ direita.':'Espelhado: cima ↔ baixo.'}</p></div>`,
+   `<div class="ft">${btn(dests.length?`Copiar para ${dests.length} ${dests.length===1?'piso':'pisos'}`:'Escolhe o destino','docopy','p',dests.length&&src.length?'':'disabled')}</div>`);});
+
+def('planview','RF_03','Planta personalizada','morador',['Os moradores só consultam. A versão que veem é sempre a última guardada.'],()=>scr(hdr('Planta do condomínio',null),
+  `<div class="ok">O administrador atualizou a planta.</div>${planBody(S.saved,false)}`,tabbar('map')));
+
+def('map','RF_04','Planta com registos',null,['Cada número é um registo com localização. Os sem localização estão na lista.','Dúvida: novos registos precisam de confirmação de outros moradores, como no Waze?'],()=>{
+  const here=pinsHere(),free=S.records.filter(r=>!r.pin).length;
+  return `<div class="scr">${hdr(esc(S.condo.name),null)}<div class="bd">${placeNav()}${planSVG(S.saved,{pins:here})}${planText(S.saved,true)}
+   <div class="row"><b>${here.length} ${here.length===1?'registo':'registos'} neste piso</b><span class="sp"></span><button class="btn g" style="padding:4px 0" data-act="filter" data-v="free">${free} sem localização →</button></div>
+   ${here.map((r,i)=>recRow(r,i+1)).join('')||'<p class="sub">Nada registado neste piso.</p>'}</div>
+   <div class="ft" style="padding-top:8px;padding-bottom:8px"><button class="btn p" data-act="newrec">+ Registar</button></div>${tabbar('map')}</div>`;});
+
+def('newrec','RF_04','Novo registo',null,['Os dois caminhos coexistem: no ponto da planta, ou só o registo.','Categorias em dois grupos: dia a dia e problemas de construção. Dúvida: quem pode juntar ou mudar categorias?','Dúvida: os problemas de construção devem poder ser exportados para entregar à promotora?'],()=>scr(hdr('Novo registo','map'),
+  `<h3>O que aconteceu?</h3><span class="lab">Dia a dia</span><div class="types">${TYPES.filter(t=>!t.g).map(t=>`<button class="${S.rec.type===t.id?'on':''}" aria-pressed="${S.rec.type===t.id}" data-act="rtype" data-t="${t.id}"><span class="dot" style="background:${t.c};margin:0"></span>${t.n}</button>`).join('')}</div>
+   <span class="lab" style="margin-top:4px">Problemas de construção (para a promotora)</span><div class="types">${TYPES.filter(t=>t.g).map(t=>`<button class="${S.rec.type===t.id?'on':''}" aria-pressed="${S.rec.type===t.id}" data-act="rtype" data-t="${t.id}"><span class="dot" style="background:${t.c};margin:0"></span>${t.n}</button>`).join('')}</div>
+   <b style="margin-top:6px">Onde?</b>
+   <button class="mode" data-act="mode" data-m="pin" ${S.rec.type?'':'disabled'}><b>Marcar na planta</b><span>Escolhe o piso e toca no ponto exato.</span></button>
+   <button class="mode" data-act="mode" data-m="free" ${S.rec.type?'':'disabled'}><b>Registar sem localização</b><span>Para avisos gerais ou quando não sabes o sítio.</span></button>`));
+
+def('locate','RF_04','Marcar ponto',null,[],()=>scr(hdr('Marcar na planta','newrec'),
+  `<div class="ok">Toca na planta para pôr o ponto. Podes mudar de piso.</div>${placeNav()}${planSVG(S.saved,{tmp:S.rec.pin&&S.rec.pin.b===S.view.b&&S.rec.pin.l===S.view.l?S.rec.pin:null})}${planText(S.saved,false)}
+   <div class="card"><b>Ajustar o ponto com os botões</b><div class="nudge">${btn('←','lp','','data-dx="-10" data-dy="0" aria-label="Mover o ponto para a esquerda"')}${btn('→','lp','','data-dx="10" data-dy="0" aria-label="Mover o ponto para a direita"')}${btn('↑','lp','','data-dx="0" data-dy="-10" aria-label="Mover o ponto para cima"')}${btn('↓','lp','','data-dx="0" data-dy="10" aria-label="Mover o ponto para baixo"')}</div>${btn(S.rec.pin?'Pôr o ponto no centro deste piso':'Pôr um ponto no centro deste piso','lpc')}</div>
+   <p class="sub" id="why" aria-live="polite">${S.rec.pin?'Ponto: '+esc(placeName(S.rec.pin.b,S.rec.pin.l)):'Ainda sem ponto. Toca na planta ou usa os botões.'}</p>`,
+  `<div class="ft">${btn('Continuar','toform','p',S.rec.pin?'':'disabled aria-describedby="why"')}</div>`));
+
+def('form','RF_04','Detalhes do registo',null,['Dúvida: fotografia obrigatória nos problemas de construção? Também vídeo?','Dúvida: guardar data e hora da foto como prova para a promotora?','Um registo sem localização pode ganhar um ponto depois.'],()=>scr(hdr('Detalhes','newrec'),
+  `<div class="row"><span class="dot" style="background:${tp(S.rec.type).c};margin:0"></span><b>${tp(S.rec.type).n}</b></div>
+   ${fld('f-rt','Título','rec.title',S.rec.title||'','ex.: Luz fundida na escada')}
+   <div class="fld"><label for="f-rd">Descrição (opcional)</label><input class="in" id="f-rd" data-bind="rec.desc" value="${esc(S.rec.desc||'')}" placeholder="O que viste?"></div>
+   <div class="fld"><label>Fotografias (até 3)</label><div class="ph">${(S.rec.photos||[]).map((u,i)=>`<div class="th"><img src="${u}" alt="Fotografia ${i+1}"><button data-act="rmphoto" data-i="${i}" aria-label="Remover fotografia ${i+1}">×</button></div>`).join('')}${(S.rec.photos||[]).length<3?`<label class="add"><span style="font-size:22px">+</span>Foto<input type="file" accept="image/*" data-photo aria-label="Juntar fotografia"></label>`:''}</div></div>
+   <div class="card"><span class="lab">Localização</span><b>${S.rec.pin?esc(placeName(S.rec.pin.b,S.rec.pin.l)):'Sem localização'}</b>${btn(S.rec.pin?'Mudar o ponto':'Adicionar ponto na planta','mode','','data-m="pin"')}</div>`,
+  `<div class="ft">${btn('Guardar registo','saverec','p')}</div>`));
+
+def('list','RF_04','Registos',null,['Dúvida: quem pode editar ou apagar um registo? Só o autor e o admin?','Dúvida: registos expiram, como no Waze?'],()=>{
+  const f=S.filter,L=S.records.filter(r=>f==='all'||(f==='pin'?r.pin:f==='free'?!r.pin:tp(r.type).g==='obra'));
+  return `<div class="scr">${hdr('Registos',null)}<div class="bd">
+   <div class="seg">${[['all','Todos'],['pin','Localizados'],['free','Sem local'],['obra','Construção']].map(a=>`<button class="${f===a[0]?'on':''}" aria-pressed="${f===a[0]}" data-act="filter" data-v="${a[0]}">${a[1]}</button>`).join('')}</div>
+   ${L.map(r=>recRow(r)).join('')||'<p class="sub">Sem registos neste filtro.</p>'}</div>
+   <div class="ft" style="padding-top:8px;padding-bottom:8px"><button class="btn p" data-act="newrec">+ Registar</button></div>${tabbar('list')}</div>`;});
+
+def('detail','RF_04','Detalhe do registo',null,['Para fechar um registo é obrigatório escrever a resolução, juntar uma foto, ou ambos.'],()=>{
+  const r=S.records.find(x=>x.id===S.recId)||S.records[0];
+  let mini='<div class="card"><span class="lab">Localização</span><b>Sem localização</b><span class="sub">Este registo não está ligado a um ponto da planta.</span></div>';
+  if(r.pin){const keep={b:S.view.b,l:S.view.l};S.view.b=r.pin.b;S.view.l=r.pin.l;mini=`<div class="card"><span class="lab">Localização</span><b>${esc(placeName(r.pin.b,r.pin.l))}</b>${planSVG(S.saved,{pins:[r]})}${planText(S.saved,false)}</div>`;S.view.b=keep.b;S.view.l=keep.l;}
+  return scr(hdr(esc(r.title),'list'),
+   `<div class="row"><span class="dot" style="background:${tp(r.type).c};margin:0"></span><b>${tp(r.type).n}</b>${tp(r.type).g==='obra'?'<span class="pill">Construção</span>':''}<span class="sp"></span><span class="pill ${r.st==='aberto'?'o':''}">${r.st}</span></div>
+   <p class="sub">${esc(r.desc)||'Sem descrição.'}</p><p class="sub">${esc(r.by)} · ${esc(r.when)}</p>${r.st==='resolvido'&&r.res?`<div class="ok"><b>Resolução</b>${r.res.text?`<br>${esc(r.res.text)}`:''}${(r.res.photos||[]).map((u,i)=>`<img class="big" style="margin-top:8px" src="${u}" alt="Fotografia da resolução ${i+1}">`).join('')}</div>`:''}${(r.photos||[]).length?`<div class="fld"><span class="lab">Fotografias (${r.photos.length})</span>${r.photos.map((u,i)=>`<img class="big" src="${u}" alt="Fotografia ${i+1} do registo">`).join('')}</div>`:''}${mini}`,
+  `<div class="ft">${btn(r.st==='aberto'?'Resolver este registo':'Reabrir','togst','p')}</div>`);});
+
+def('resolve','RF_04','Resolver registo',null,['Para resolver é obrigatório escrever algo, juntar uma foto, ou os dois.','Dúvida: quem pode resolver um registo? Só o autor e o administrador, ou qualquer morador?','Dúvida: para problemas de construção, a resolução é confirmada por quem o registou?'],()=>{
+  const r=S.records.find(x=>x.id===S.recId)||S.records[0],ph=S.res.photos||[],ok=(S.res.text||'').trim().length>0||ph.length>0;
+  return scr(hdr('Resolver registo','detail'),
+  `<div class="card"><b>${esc(r.title)}</b><span class="sub">${tp(r.type).n} · ${r.pin?esc(placeName(r.pin.b,r.pin.l)):'Sem localização'}</span></div>
+   <h3 style="font-size:22px">Como ficou resolvido?</h3>
+   <p class="sub">Escreve o que foi feito, junta uma fotografia, ou faz as duas coisas. Um dos dois é obrigatório.</p>
+   <div class="fld"><label for="f-rs">O que foi feito</label><input class="in" id="f-rs" data-bind="res.text" value="${esc(S.res.text||'')}" placeholder="ex.: Lâmpada trocada pela empresa de manutenção"></div>
+   <div class="fld"><label>Fotografias (até 3)</label><div class="ph">${ph.map((u,i)=>`<div class="th"><img src="${u}" alt="Fotografia ${i+1}"><button data-act="rmres" data-i="${i}" aria-label="Remover fotografia ${i+1}">×</button></div>`).join('')}${ph.length<3?`<label class="add"><span style="font-size:22px">+</span>Foto<input type="file" accept="image/*" data-photo="res" aria-label="Juntar fotografia"></label>`:''}</div></div>
+   ${ok?'':note('Falta escrever algo ou juntar uma fotografia para poder fechar o registo.')}`,
+  `<div class="ft">${btn('Marcar como resolvido','doresolve','p',ok?'':'disabled')}</div>`);});
+
+def('cfg','RF_01','Condomínio',null,['Um utilizador pode pertencer a mais de um condomínio e escolher qual abrir.','O administrador vê as opções de configuração; o morador só consulta.'],()=>scr(hdr('Condomínio',null),
+  `<div class="card"><b>${esc(S.condo.name)}</b><span class="sub">${esc(S.condo.addr)}</span><span class="sub">${S.q.buildings.length} prédios · ${S.records.length} registos</span></div>
+   ${isAdmin()?`<div class="card"><span class="lab">Código de convite</span><div class="code" style="font-size:18px">${esc(S.condo.code)}</div>${btn('Copiar código','copy')}</div>
+   ${go_('Editar o desenho da planta','edit')}${go_('Refazer o questionário','q0')}`:`<div class="note">Só o administrador pode alterar a planta.</div>${go_('Ver a planta','planview')}`}
+   ${go_('Voltar às boas-vindas','welcome','g')}`,tabbar('cfg')));
+
+function recRow(r,n){return `<button class="rec" data-act="open" data-id="${r.id}"><span class="dot" style="background:${tp(r.type).c}"></span><span class="sp"><b>${n?n+'. ':''}${esc(r.title)}</b><small>${tp(r.type).g==='obra'?esc(tp(r.type).n)+' · ':''}${r.pin?esc(placeName(r.pin.b,r.pin.l)):'Sem localização'} · ${esc(r.by)}, ${esc(r.when)}</small></span>${(r.photos||[]).length?`<span class="pill">📷 ${r.photos.length}</span>`:''}<span class="pill ${r.st==='aberto'?'o':''}">${r.st}</span></button>`;}
+
+const JOURNEY=[
+ ['RF_01 · Perfis e acesso',['welcome','auth','create','created','join','login','joined']],
+ ['RF_02 · Configuração e planta base',['q0','q1','q2','q3','q4','base']],
+ ['RF_03 · Edição livre da planta',['edit','copy','planview']],
+ ['RF_04 · Registos de ocorrências',['map','newrec','locate','form','list','detail','resolve']]];
+const ORDER=JOURNEY.flatMap(j=>j[1]);
+
+/* ---------- render ---------- */
+let lastScreen=null;
+const FK=['act','id','f','w','b','l','t','d','m','v','to','i','a','dx','dy','r'];
+function focusSig(){const a=document.activeElement;if(!a||(!$('#phone').contains(a)&&!$('#journey').contains(a)))return null;
+  if(a.id)return '#'+a.id;if(!a.dataset||!a.dataset.act)return null;return a.tagName.toLowerCase()+FK.filter(k=>a.dataset[k]!==undefined).map(k=>`[data-${k}="${a.dataset[k]}"]`).join('');}
+function focusName(){if(S.sel&&S.cat!=='name'){S.cat='name';render();}const i=document.getElementById('f-el');if(i){i.focus();i.select();}}
+function announce(t){const l=$('#live');l.textContent='';setTimeout(()=>{l.textContent=t;},30);}
+function render(){
+  const s=SC[S.screen],sig=focusSig(),changed=lastScreen!==S.screen;
+  const oldBd=document.querySelector('#phone .bd'),keepTop=oldBd&&!changed?oldBd.scrollTop:0;
+  let html=s.fn();
+  if(S.modal==='save')html+=`<div class="mod" id="mod"><div role="dialog" aria-modal="true" aria-labelledby="mod-t" aria-describedby="mod-d"><h3 id="mod-t" style="font-size:22px">Guardar alterações?</h3><p class="sub" id="mod-d">Os moradores passam a ver esta planta. Os registos com localização mantêm o ponto.</p>${btn('Guardar','confirmsave','p')}${btn('Continuar a editar','closemod','')}</div></div>`;
+  if(S.toast)html+=`<div class="toast" aria-hidden="true">${esc(S.toast)}</div>`;
+  $('#phone').innerHTML=html;
+  const newBd=document.querySelector('#phone .bd');if(newBd&&keepTop)newBd.scrollTop=keepTop;
+  $('#roleseg').querySelectorAll('button').forEach(b=>{b.classList.toggle('on',b.dataset.r===S.role);b.setAttribute('aria-pressed',b.dataset.r===S.role);});
+  $('#journey').innerHTML=JOURNEY.map(([t,ids])=>`<div class="rf"><span class="lab">${t}</span>${ids.map(id=>`<button class="step ${id===S.screen?'on':''}" ${id===S.screen?'aria-current="page"':''} data-act="jump" data-to="${id}"><i>${String(ORDER.indexOf(id)+1).padStart(2,'0')}</i>${esc(SC[id].title)}</button>`).join('')}</div>`).join('');
+  $('#jumpsel').innerHTML=JOURNEY.map(([t,ids])=>`<optgroup label="${t}">${ids.map(id=>`<option value="${id}" ${id===S.screen?'selected':''}>${String(ORDER.indexOf(id)+1).padStart(2,'0')} · ${esc(SC[id].title)}</option>`).join('')}</optgroup>`).join('');
+  $('#cap').innerHTML=`<span class="rfname">${s.rf} · ${esc(s.title)}</span>`+(s.notes.length?`<span class="lab">Pontos em aberto</span><ul>${s.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`:'');
+  if(S.modal){const f=$('#mod button');if(f)f.focus();}
+  else if(changed&&!S.toast){const h=$('#phone .hd h2')||$('#phone .bd h3');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true});}announce(s.title);}
+  else if(sig){const t=document.querySelector(sig);if(t&&!t.disabled)t.focus({preventScroll:true});}
+  lastScreen=S.screen;
+}
+document.addEventListener('keydown',e=>{
+  if(!S.modal)return;
+  if(e.key==='Escape'){S.modal=null;render();return;}
+  if(e.key==='Tab'){const b=[...document.querySelectorAll('#mod button')];if(!b.length)return;const f=b[0],l=b[b.length-1];
+    if(e.shiftKey&&document.activeElement===f){e.preventDefault();l.focus();}else if(!e.shiftKey&&document.activeElement===l){e.preventDefault();f.focus();}}
+});
+function go(to){S.screen=to;S.modal=null;if(to==='locate'||to==='map'||to==='list'){}
+  if(to==='newrec'&&!S.rec.keep)S.rec={};
+  render();const b=document.querySelector('#phone .bd');if(b)b.scrollTop=0;}
+function toast(t){S.toast=t;render();announce(t);setTimeout(()=>{S.toast=null;render();},2200);}
+
+/* ---------- ações ---------- */
+const A={
+ role:d=>{S.role=d.r;const s=SC[S.screen];if(s.role&&s.role!==S.role)go(S.role==='admin'?'created':'joined');else render();},
+ jump:d=>{const s=SC[d.to];if(s.role)S.role=s.role;if(d.to==='base'||d.to==='map'||d.to==='planview'||d.to==='edit')fixView();go(d.to);},
+ go:d=>{if(d.to==='edit'||d.to==='map'||d.to==='planview')fixView();go(d.to);},
+ flow:d=>{S.flow=d.v;if(d.v==='login'){go('login');return;}S.role=d.v==='create'?'admin':'morador';go(d.v==='create'?'auth':'join');},
+ loginok:()=>{S.role='morador';fixView();go('map');},
+ forgot:()=>toast('Enviámos uma ligação para o teu email'),
+ authok:()=>go('create'),
+ joinok:()=>{S.role='morador';go('joined');},
+ copy:()=>{try{navigator.clipboard.writeText(S.condo.code).then(()=>toast('Código copiado'),()=>toast('Seleciona e copia o código'));}catch(e){toast('Seleciona e copia o código');}},
+ nb:d=>{const bs=S.q.buildings,oldIds=bs.map(b=>b.id),n=Math.min(4,Math.max(1,bs.length+ +d.d));
+   while(bs.length<n){const i=bs.length;bs.push({id:'b'+(i+1),name:'Prédio '+'ABCD'[i],floors:2,start:0});}
+   while(bs.length>n)bs.pop();const ids=bs.map(b=>b.id);
+   S.q.shared.forEach(x=>{x.where=x.where.length===oldIds.length?ids.slice():x.where.filter(i=>ids.includes(i));});render();},
+ fl:d=>{const b=S.q.buildings.find(x=>x.id===d.id);b.floors=Math.min(12,Math.max(1,b.floors+ +d.d));render();},
+ tgb:d=>{const b=S.q.buildings.find(x=>x.id===d.id);b[d.f]=!b[d.f];render();},
+ tgs:d=>{const s=S.q.shared.find(x=>x.id===d.id);s.on=!s.on;render();},
+ sw:d=>{const s=S.q.shared.find(x=>x.id===d.id);s.where=s.where.includes(d.w)?s.where.filter(w=>w!==d.w):[...s.where,d.w];render();},
+ addsh:()=>{const n=S.custom.trim();if(!n)return;S.q.shared.push({id:'s'+Date.now(),kind:'outra',name:n,on:true,at:'X',where:S.q.buildings.map(b=>b.id)});S.custom='';render();},
+ bst:d=>{const b=S.q.buildings.find(x=>x.id===d.id);b.start=+d.v;render();},
+ gu:d=>{const x=S.q.shared.find(v=>v.id===d.id);x.under=x.under===false;render();},
+ at:d=>{const x=S.q.shared.find(v=>v.id===d.id);x.at=d.v;render();},
+ gf:d=>{const x=S.q.shared.find(v=>v.id===d.id);x.floors=Math.min(4,Math.max(1,x.floors+ +d.d));render();},
+ gen:()=>{generate();go('base');},
+ vb:d=>{S.view.b=d.b;fixView(true);S.sel=null;render();},
+ vl:d=>{S.view.l=d.l;S.sel=null;render();},
+ tool:d=>{S.tool=d.t;render();},
+ cat:d=>{S.cat=d.v;render();},
+ selel:d=>{S.sel=d.id;render();},
+ desel:()=>{S.sel=null;render();},
+ opencopy:()=>{S.cp={what:S.sel?'el':'floor',dest:[],mirror:'none',mode:'replace'};go('copy');},
+ cpw:d=>{S.cp.what=d.v;render();},
+ cpd:d=>{const a=S.cp.dest;S.cp.dest=a.includes(d.k)?a.filter(x=>x!==d.k):[...a,d.k];render();},
+ cpm:d=>{S.cp.mirror=d.v;render();},
+ cpx:d=>{S.cp.mode=d.v;render();},
+ docopy:()=>{const cp=S.cp,here=keyOf(S.view.b,S.view.l),src=copySrc();if(!cp.dest.length||!src.length)return;
+  let n=0,ov=0;cp.dest.forEach(k=>{const arr=S.draft[k]||(S.draft[k]=[]);const add=cp.what==='el'||cp.mode==='add'||k===here;
+   const keep=add?arr:arr.filter(e=>e.tone==='outline');const copies=mirrorEls(src,cp.mirror);const out=[...keep,...copies];S.draft[k]=out;n++;copies.forEach(c=>{ov+=overl(out,c).length?1:0;});});
+  commit();const first=cp.dest[0].split(':');S.view.b=first[0];S.view.l=first[1];S.sel=null;go('edit');
+  toast('Copiado para '+n+(n===1?' piso':' pisos')+(ov?'. Atenção: '+ov+' sobreposições.':'.'));},
+ nudge:d=>{const e=curEls(S.draft).find(x=>x.id===S.sel);if(!e)return;e.x=Math.max(0,Math.min(BW-(e.w||0),e.x+ +d.dx));e.y=Math.max(0,Math.min(BH-(e.h||0),e.y+ +d.dy));commit();render();},
+ delsel:()=>{const a=curEls(S.draft),i=a.findIndex(x=>x.id===S.sel);if(i>=0){a.splice(i,1);S.sel=null;commit();render();announce('Elemento apagado');}},
+ addshape:()=>{const els=curEls(S.draft);let at=null;for(let y=3;y<=BH-6&&!at;y++)for(let x=3;x<=BW-7&&!at;x++){const t={id:'_',k:'rect',tone:'free',x,y,w:4,h:3};if(!overl(els,t).length&&!(t.x<0))at=[x,y];}const n=E('free','Zona',...(at||[14,13]),4,3);els.push(n);S.sel=n.id;commit();render();focusName();announce('Zona de 4 por 3 metros juntada. Escreve o nome.');},
+ addtext:()=>{const n=T('Texto',12,15);curEls(S.draft).push(n);S.sel=n.id;commit();render();focusName();announce('Texto juntado. Escreve o texto.');},
+ lp:d=>{const k=S.rec.pin&&S.rec.pin.b===S.view.b&&S.rec.pin.l===S.view.l;if(!k){A.lpc();return;}const q=S.rec.pin;q.x=Math.max(14,Math.min(306,q.x+ +d.dx));q.y=Math.max(30,Math.min(296,q.y+ +d.dy));render();},
+ lpc:()=>{S.rec.pin={b:S.view.b,l:S.view.l,x:160,y:150};render();},
+ undo:()=>{if(S.hi>0){S.hi--;S.draft=JSON.parse(S.hist[S.hi]);S.sel=null;render();}},
+ redo:()=>{if(S.hi<S.hist.length-1){S.hi++;S.draft=JSON.parse(S.hist[S.hi]);S.sel=null;render();}},
+ resetbase:()=>{S.draft=clone(S.base);commit();S.sel=null;render();},
+ sz:d=>{const e=curEls(S.draft).find(x=>x.id===S.sel);if(!e||e.k!=='rect')return;const max=d.a==='w'?BW-e.x:BH-e.y;e[d.a]=Math.max(1,Math.min(max,e[d.a]+ +d.d));commit();render();},
+ savedlg:()=>{S.modal='save';render();},
+ closemod:()=>{S.modal=null;render();},
+ confirmsave:()=>{S.saved=clone(S.draft);S.modal=null;S.screen='map';fixView();render();toast('Planta guardada. Os moradores já a veem.');},
+ newrec:()=>{S.rec={};go('newrec');},
+ rtype:d=>{S.rec.type=d.t;render();},
+ mode:d=>{if(d.m==='pin'){S.rec.pin=S.rec.pin||null;go('locate');}else{S.rec.pin=null;go('form');}},
+ toform:()=>go('form'),
+ saverec:()=>{const r=S.rec;S.records.unshift({id:Date.now(),type:r.type||'outro',title:(r.title||'').trim()||tp(r.type||'outro').n,desc:r.desc||'',photos:r.photos||[],pin:r.pin||null,by:S.role==='admin'?'Daniel':'Sarinha',when:'agora',st:'aberto'});
+   const p=r.pin;S.rec={};if(p){S.view.b=p.b;S.view.l=p.l;}S.screen=p?'map':'list';S.filter='all';render();toast('Registo guardado');},
+ filter:d=>{S.filter=d.v;if(S.screen!=='list')go('list');else render();},
+ open:d=>{S.recId=+d.id;go('detail');},
+ rmphoto:d=>{S.rec.photos.splice(+d.i,1);render();},
+ togst:()=>{const r=S.records.find(x=>x.id===S.recId);if(r.st==='aberto'){S.res={};go('resolve');}else{r.st='aberto';r.res=null;render();}},
+ rmres:d=>{S.res.photos.splice(+d.i,1);render();},
+ doresolve:()=>{const r=S.records.find(x=>x.id===S.recId);const t=(S.res.text||'').trim(),ph=S.res.photos||[];if(!t&&!ph.length)return;r.st='resolvido';r.res={text:t,photos:ph,by:S.role==='admin'?'Daniel':'Sarinha'};S.res={};go('detail');toast('Registo resolvido');}
+};
+const curEls=src=>src[keyOf(S.view.b,S.view.l)]||(src[keyOf(S.view.b,S.view.l)]=[]);
+
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');
+  if(t&&!t.disabled&&A[t.dataset.act]){A[t.dataset.act](t.dataset);return;}
+  const pin=e.target.closest('[data-pin]');
+  if(pin&&(S.screen==='map')){S.recId=+pin.dataset.pin;go('detail');}
+});
+document.addEventListener('input',e=>{
+  const i=e.target;
+  if(i.dataset.bind){
+    const p=i.dataset.bind;
+    if(p.startsWith('b:')){const [,id,k]=p.split(':');S.q.buildings.find(b=>b.id===id)[k]=i.value;}
+    else{const [a,b]=p.split('.');if(b)S[a][b]=i.value;else S[a]=i.value;}
+  }
+  if(i.hasAttribute('data-el-label')){const el=curEls(S.draft).find(x=>x.id===S.sel);if(el){el.label=i.value;$('#canvas').innerHTML=planSVG(S.draft,{sel:S.sel,edit:true});}}
+});
+document.addEventListener('change',e=>{
+  if(e.target.hasAttribute('data-el-label'))commit();
+  if(e.target.hasAttribute('data-photo')){
+    const f=e.target.files&&e.target.files[0];if(!f)return;
+    const rd=new FileReader();
+    rd.onload=()=>{const im=new Image();im.onload=()=>{
+      const k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement('canvas');
+      c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+      const tgt=e.target.dataset.photo==='res'?S.res:S.rec;(tgt.photos=tgt.photos||[]).push(c.toDataURL('image/jpeg',.8));render();};
+      im.onerror=()=>toast('Não foi possível ler a imagem');im.src=rd.result;};
+    rd.readAsDataURL(f);}
+});
+$('#jumpsel').addEventListener('change',e=>A.jump({to:e.target.value}));
+
+/* desenho: mover, juntar, apagar */
+function svgPt(svg,ev){const p=svg.createSVGPoint();p.x=ev.clientX;p.y=ev.clientY;return p.matrixTransform(svg.getScreenCTM().inverse());}
+document.addEventListener('pointerdown',e=>{
+  const svg=e.target.closest('#svg');if(!svg)return;
+  const pt=svgPt(svg,e);
+  if(S.screen==='locate'){S.rec.pin={b:S.view.b,l:S.view.l,x:Math.round(Math.max(14,Math.min(306,pt.x))),y:Math.round(Math.max(30,Math.min(296,pt.y)))};render();return;}
+  if(S.screen!=='edit')return;
+  const els=curEls(S.draft),hit=e.target.closest('[data-el]'),el=hit&&els.find(x=>x.id===hit.dataset.el);
+  const redraw=()=>{$('#canvas').innerHTML=planSVG(S.draft,{sel:S.sel,edit:true});};
+  const drag=(mv,done)=>{const up=()=>{window.removeEventListener('pointermove',mv);window.removeEventListener('pointerup',up);done();};window.addEventListener('pointermove',mv);window.addEventListener('pointerup',up);};
+  const hh=e.target.closest('[data-h]');
+  if(hh&&S.sel){const t=els.find(x=>x.id===S.sel);if(t&&t.k==='rect'){e.preventDefault();const dir=hh.dataset.h,o={x:t.x,y:t.y,w:t.w,h:t.h};let moved=false;
+    drag(ev=>{const p=svgPt($('#svg'),ev),px=Math.max(0,Math.min(BW,Math.round(p.x/M))),py=Math.max(0,Math.min(BH,Math.round(p.y/M)));moved=true;
+      if(dir.includes('e'))t.w=Math.max(1,px-o.x);
+      if(dir.includes('s'))t.h=Math.max(1,py-o.y);
+      if(dir.includes('w')){const nx=Math.min(px,o.x+o.w-1);t.x=nx;t.w=o.x+o.w-nx;}
+      if(dir.includes('n')){const ny=Math.min(py,o.y+o.h-1);t.y=ny;t.h=o.y+o.h-ny;}
+      redraw();},()=>{if(moved)commit();render();});return;}}
+  if(S.tool==='shape'){const n=E('free','Zona',Math.max(0,Math.min(BW-4,Math.round(pt.x/M-2))),Math.max(0,Math.min(BH-3,Math.round(pt.y/M-1.5))),4,3);els.push(n);S.sel=n.id;S.tool='select';commit();render();focusName();return;}
+  if(S.tool==='text'){const n=T('Texto',Math.max(0,Math.min(BW,Math.round(pt.x/M))),Math.max(1,Math.min(BH,Math.round(pt.y/M))));els.push(n);S.sel=n.id;S.tool='select';commit();render();focusName();return;}
+  if(S.tool==='erase'){if(el){els.splice(els.indexOf(el),1);S.sel=null;commit();render();}return;}
+  if(!el){S.sel=null;render();return;}
+  const wasSel=S.sel===el.id;S.sel=el.id;e.preventDefault();
+  const ox=pt.x-el.x*M,oy=pt.y-el.y*M;let moved=false;
+  drag(ev=>{const p=svgPt($('#svg'),ev);moved=true;let nx=Math.round((p.x-ox)/M),ny=Math.round((p.y-oy)/M);
+      el.x=Math.max(0,Math.min(BW-(el.w||0),nx));el.y=Math.max(0,Math.min(BH-(el.h||0),ny));redraw();},()=>{if(moved)commit();render();if(!moved&&wasSel)focusName();});
+  render();
+});
+
+document.documentElement.lang='pt-PT';
+generate();
+render();
+</script>
